@@ -768,6 +768,50 @@ describe("tgen", function () {
       });
     });
 
+    it("checkerboard is seamless", function () {
+      // across the wrap the cells must keep alternating and keep their width
+      [3, 6, 10, 30, [5, 12]].forEach(function (cells) {
+        const generator = tgen.init(size, size);
+
+        generator.render({
+          items: [
+            [0, "fill", { rgba: [0, 0, 0, 255] }],
+            [0, "checkerboard", { size: cells, rgba: [255, 255, 255, 255], blend: "normal" }],
+          ],
+        });
+
+        const data = generator.texture.data;
+        const runs = function (at) {
+          const out = [];
+          let prev = null;
+
+          for (let i = 0; i < size; i++) {
+            const v = at(i) > 127;
+            if (v === prev) {
+              out[out.length - 1]++;
+            } else {
+              out.push(1);
+            }
+            prev = v;
+          }
+
+          if (out.length > 1 && (at(0) > 127) === (at(size - 1) > 127)) {
+            out[0] += out.pop();
+          }
+
+          return out;
+        };
+
+        [
+          runs((x) => data[x * 4]),
+          runs((y) => data[y * size * 4]),
+        ].forEach(function (r) {
+          assert.ok(r.length % 2 === 0, "size " + cells + ": " + r.length + " cells across the wrap");
+          assert.ok(Math.max(...r) - Math.min(...r) <= 1, "size " + cells + ": cell widths " + r.join(","));
+        });
+      });
+    });
+
     it("defaults are not mutated by effects", function () {
       const before = JSON.stringify(tgen.defaults);
       const generator = tgen.init(size, size);

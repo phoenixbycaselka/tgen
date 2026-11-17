@@ -28,6 +28,36 @@ module.exports = function (tgen) {
         sizeY = params.size[1] = $g.randByArraySeed(params.size[1], null, true);
       }
 
+      if (!$g.legacy) {
+        // an even number of cells with boundaries at round(i * width / cells)
+        // covers the texture exactly and keeps alternating across the wrap
+        const evenCells = function (n) {
+          n = Math.max(2, Math.round(n));
+          return n % 2 ? n + 1 : n;
+        };
+        const cellsX = evenCells(sizeX);
+        const cellsY = evenCells(sizeY);
+        const edge = function (i, cells, total) {
+          return Math.round((i * total) / cells);
+        };
+
+        for (cx = 0; cx < cellsX; cx++) {
+          for (cy = 0; cy < cellsY; cy++) {
+            if ((cx + cy) % 2) {
+              continue;
+            }
+
+            for (x = edge(cx, cellsX, width); x < edge(cx + 1, cellsX, width); x++) {
+              for (y = edge(cy, cellsY, height); y < edge(cy + 1, cellsY, height); y++) {
+                $g.point.set(x, y);
+              }
+            }
+          }
+        }
+
+        return params;
+      }
+
       const cellX = Math.round(width / sizeX);
       const cellY = Math.round(height / sizeY);
 
